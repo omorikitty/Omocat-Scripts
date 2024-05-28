@@ -1,0 +1,504 @@
+{
+ "Achievements": {
+  "Boom Goes the Dynamite": {
+   "Complete": false
+  }, 
+  "Boxer": {
+   "Complete": false
+  }, 
+  "Dual Wielding": {
+   "Complete": false
+  }, 
+  "Flawless Victory": {
+   "Complete": false
+  }, 
+  "Free Loader": {
+   "Complete": true
+  }, 
+  "Gold Miner": {
+   "Complete": false
+  }, 
+  "Got the Moves": {
+   "Complete": false
+  }, 
+  "In Control": {
+   "Complete": false
+  }, 
+  "Last Stand God": {
+   "Complete": false
+  }, 
+  "Last Stand Master": {
+   "Complete": false
+  }, 
+  "Last Stand Wizard": {
+   "Complete": false
+  }, 
+  "Mine Games": {
+   "Complete": false
+  }, 
+  "Off You Go Then": {
+   "Complete": false
+  }, 
+  "Onslaught God": {
+   "Complete": false
+  }, 
+  "Onslaught Master": {
+   "Complete": false
+  }, 
+  "Onslaught Training Victory": {
+   "Complete": false
+  }, 
+  "Onslaught Wizard": {
+   "Complete": false
+  }, 
+  "Precision Bombing": {
+   "Complete": false
+  }, 
+  "Pro Boxer": {
+   "Complete": false
+  }, 
+  "Pro Football Shutout": {
+   "Complete": false
+  }, 
+  "Pro Football Victory": {
+   "Complete": false
+  }, 
+  "Pro Onslaught Victory": {
+   "Complete": false
+  }, 
+  "Pro Runaround Victory": {
+   "Complete": false
+  }, 
+  "Rookie Football Shutout": {
+   "Complete": false
+  }, 
+  "Rookie Football Victory": {
+   "Complete": false
+  }, 
+  "Rookie Onslaught Victory": {
+   "Complete": false
+  }, 
+  "Runaround God": {
+   "Complete": false
+  }, 
+  "Runaround Master": {
+   "Complete": false
+  }, 
+  "Runaround Wizard": {
+   "Complete": false
+  }, 
+  "Sharing is Caring": {
+   "Complete": false
+  }, 
+  "Stayin' Alive": {
+   "Complete": false
+  }, 
+  "Super Mega Punch": {
+   "Complete": false
+  }, 
+  "Super Punch": {
+   "Complete": false
+  }, 
+  "TNT Terror": {
+   "Complete": false
+  }, 
+  "Team Player": {
+   "Complete": false
+  }, 
+  "The Great Wall": {
+   "Complete": false
+  }, 
+  "The Wall": {
+   "Complete": false
+  }, 
+  "Uber Football Shutout": {
+   "Complete": false
+  }, 
+  "Uber Football Victory": {
+   "Complete": false
+  }, 
+  "Uber Onslaught Victory": {
+   "Complete": false
+  }, 
+  "Uber Runaround Victory": {
+   "Complete": false
+  }
+ }, 
+ "Auto Account State": "Server", 
+ "Auto Balance Teams": true, 
+ "Campaigns": {}, 
+ "Default Player Profiles": {
+  "Client Input Device #1": "Batman wholaughs", 
+  "Client Input Device #10": "_random", 
+  "Client Input Device #11": "\u0fc8\u1c68\u263f\ua5c7\ud835\udd6d\u0f08\u0fc2\u0fc8", 
+  "Client Input Device #12": "\",-8,-1500,-6,-9", 
+  "Client Input Device #13": "__account__", 
+  "Client Input Device #15": "FML \u9ed1\u8272\u7684", 
+  "Client Input Device #16": "_random", 
+  "Client Input Device #17": "\u271e\ufe0e\u1d04\u1d00\u1d22\u1d00\u1d05\u1d0f\u0280\u2615\ufe0e", 
+  "Client Input Device #18": "__account__", 
+  "Client Input Device #19": "MATA GEYS", 
+  "Client Input Device #2": "__account__", 
+  "Client Input Device #20": "_random", 
+  "Client Input Device #23": "__account__", 
+  "Client Input Device #3": "__account__", 
+  "Client Input Device #4": "\"\u00b0t\u00f6k\u00ff\u00f8 dr\u00efft\u00b0\"", 
+  "Client Input Device #40": "t\u00fa ano", 
+  "Client Input Device #5": "tivo", 
+  "Client Input Device #6": "_random", 
+  "Client Input Device #7": "Ka\u0365pp\u0363a\u036b66", 
+  "Client Input Device #8": "boyfriend", 
+  "Client Input Device #9": "Nonimo"
+ }, 
+ "Enable Telnet": false, 
+ "Free-for-All Playlist Randomize": true, 
+ "Free-for-All Playlist Selection": "NenSmash", 
+ "Free-for-All Playlists": {
+  "Mi lista Todos contra Todos": [
+   {
+    "settings": {
+     "Hold Time": 60, 
+     "Respawn Times": 0.5, 
+     "Time Limit": 0, 
+     "map": "The Pad"
+    }, 
+    "type": "magic_box.MagicBoxGame"
+   }, 
+   {
+    "settings": {
+     "Chosen One Gets Gloves": true, 
+     "Chosen One Gets Shield": false, 
+     "Chosen One Time": 30, 
+     "Epic Mode": true, 
+     "Respawn Times": 1.0, 
+     "Time Limit": 0, 
+     "map": "Monkey Face"
+    }, 
+    "type": "bsChosenOne.ChosenOneGame"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Mines to win": 80, 
+     "map": "Football Stadium"
+    }, 
+    "type": "snake.SnakeGame"
+   }, 
+   {
+    "settings": {
+     "Bomb Spawning": 2000, 
+     "Epic Mode": 1, 
+     "Laps": 5, 
+     "Mine Spawning": 8000, 
+     "Time Limit": 0, 
+     "map": "Big G"
+    }, 
+    "type": "bsRace.RaceGame"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": false, 
+     "Lives Per Player": 1, 
+     "Respawn Times": 0.25, 
+     "Time Limit": 120, 
+     "map": "Football Stadium"
+    }, 
+    "type": "BackToYou.BackToYou"
+   }, 
+   {
+    "settings": {
+     "Allow negative score": false, 
+     "Epic Mode": false, 
+     "Keep Powerups Alive When Fighting": true, 
+     "Kills to Win Per Player": 10, 
+     "Preserve queue through games": true, 
+     "Reduce score on suicide": false, 
+     "Respawn Powerups When Fights Finish": true, 
+     "Time Limit": 0, 
+     "Tint Gameplay Colour": 0.25, 
+     "map": "Rampage"
+    }, 
+    "type": "Duel.DuelGame"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 2, 
+     "Time Limit": 120, 
+     "map": "Step Right Up"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Bomb Spawning": 0, 
+     "Epic Mode": false, 
+     "Laps": 2, 
+     "Mine Spawning": 0, 
+     "Time Limit": 0, 
+     "map": "Big G"
+    }, 
+    "type": "SquidRace.SquidRaceGame"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": false, 
+     "Frozen One Gets Gloves": true, 
+     "Frozen One Time": 30, 
+     "Respawn Times": 1.0, 
+     "Time Limit": 0, 
+     "map": "Courtyard"
+    }, 
+    "type": "frozenone.FrozenOneGame"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives Per Player": 2, 
+     "Respawn Times": 1.0, 
+     "Time Limit": 0, 
+     "map": "Rampage"
+    }, 
+    "type": "Protection.ProtectionGame"
+   }, 
+   {
+    "settings": {
+     "Hold Time": 30, 
+     "Respawn Times": 0.5, 
+     "Time Limit": 0, 
+     "map": "The Pad"
+    }, 
+    "type": "bsKeepAway.KeepAwayGame"
+   }
+  ], 
+  "NenSmash": [
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Hockey Stadium"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": true, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "ZizagMap Test"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "The Pad"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Tower D"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Doom Shroom"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": true, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Football Stadium"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Lake Frigid"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Rampage"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": true, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Step Right Up"
+    }, 
+    "type": "smash.SuperSmash"
+   }, 
+   {
+    "settings": {
+     "Epic Mode": 1, 
+     "Lives (0 = Unlimited)": 5, 
+     "Time Limit": 120, 
+     "map": "Courtyard"
+    }, 
+    "type": "smash.SuperSmash"
+   }
+  ]
+ }, 
+ "Lang": "English", 
+ "Local Account Name": "Server10352409", 
+ "PSTR": 0, 
+ "Player Profiles": {
+  "__account__": {
+   "character": "Spaz", 
+   "color": [
+    0.5, 
+    0.25, 
+    1.0
+   ], 
+   "highlight": [
+    0.5, 
+    0.25, 
+    1.0
+   ]
+  }
+ }, 
+ "Port": 43210, 
+ "Show Tutorial": false, 
+ "Signed In Last Session": false, 
+ "Team Tournament Playlist Randomize": true, 
+ "Team Tournament Playlist Selection": "__default__", 
+ "Team Tournament Playlists": {}, 
+ "Telnet Password": "", 
+ "Telnet Port": 43250, 
+ "chatMessageMaxFrequency": 60, 
+ "colorsMod": {
+  "activeProfiles": [
+   "__account__"
+  ], 
+  "changeColor": true, 
+  "changeHighlight": false, 
+  "changeName": false, 
+  "colorBots": false, 
+  "colorTitle": true, 
+  "colors": [
+   [
+    1, 
+    0.15, 
+    0.15
+   ], 
+   [
+    0.2, 
+    1, 
+    0.2
+   ], 
+   [
+    0.1, 
+    0.1, 
+    1
+   ], 
+   [
+    0.2, 
+    1, 
+    1
+   ], 
+   [
+    0.5, 
+    0.25, 
+    1.0
+   ], 
+   [
+    1, 
+    1, 
+    0
+   ], 
+   [
+    1, 
+    0.5, 
+    0
+   ], 
+   [
+    1, 
+    0.3, 
+    0.5
+   ], 
+   [
+    0.1, 
+    0.1, 
+    0.5
+   ], 
+   [
+    0.4, 
+    0.2, 
+    0.1
+   ], 
+   [
+    0.1, 
+    0.35, 
+    0.1
+   ], 
+   [
+    1, 
+    0.8, 
+    0.5
+   ], 
+   [
+    0.4, 
+    0.05, 
+    0.05
+   ], 
+   [
+    0.13, 
+    0.13, 
+    0.13
+   ], 
+   [
+    0.5, 
+    0.5, 
+    0.5
+   ], 
+   [
+    1, 
+    1, 
+    1
+   ]
+  ], 
+  "delScorch": true, 
+  "flag": true, 
+  "glowBots": false, 
+  "glowColor": false, 
+  "glowHighlight": false, 
+  "glowName": false, 
+  "glowScale": 1, 
+  "glowingBombs": true, 
+  "shieldColor": false, 
+  "tab": "info", 
+  "timeDelay": 500, 
+  "xplotionColor": true
+ }, 
+ "launchCount": 4580, 
+ "lc14": 1, 
+ "lc14146": 1, 
+ "lc14173": 1, 
+ "lc14292": 1, 
+ "lc14c": 1
+}

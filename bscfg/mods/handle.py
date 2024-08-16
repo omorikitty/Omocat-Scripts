@@ -26,14 +26,9 @@ joined = {}
 
 queue = []
 
-whitelist = [
-"pb-IF4xVUg4FA=="
-]
 
 
-
-
-def join(accountid,clientID):
+def join(accountid, clientID):
     if accountid is not None and clientID is not None:
         if db.isBanned(accountid):
             data = db.getBanData(accountid)
@@ -66,7 +61,7 @@ def join(accountid,clientID):
                     transient=True)
                 stats['i'].pop(name)
         db.saveData(accountid, stats)
-        daily(accountid,clientID)
+        daily(accountid, clientID)
     queue.remove(accountid)
 
 
@@ -75,11 +70,12 @@ def extract_command(msg):
     for prefix in some.prefixes:
         if msg.startswith(prefix):
             # Elimina el prefijo y obten el comando
-            return msg[len(prefix) :].split(" ")[0].lower()
+            return msg[len(prefix):].split(" ")[0].lower()
 
     return
 
-def daily(n,n2):
+
+def daily(n, n2):
     if n is None:
         return
     date = int(datetime.datetime.now().strftime('%d'))
@@ -92,30 +88,6 @@ def daily(n,n2):
                          transient=True)
         db.saveData(n, stats)
     return
-
-
-
-def report():
-    """Notify when a report is sent"""
-    lastModifyFile = os.stat(some.reportfile)
-    detect = False
-    while True:
-        currentFile = os.stat(some.reportfile)
-        if currentFile != lastModifyFile:
-            currentFile = lastModifyFile
-            detect=True
-        else:
-            detect = False
-            
-        tim.sleep(5)
-
-    if detect:
-        print('A New report has been sent, check it - {}!'.format(datetime.datetime.now()))
-
-
-
-start_new_thread(report, ())
-
 
 
 def inv(nick):
@@ -173,10 +145,9 @@ def getPlayerFromNick(nick):
     if '/' in nick:
         nick = nick.split('/')[0]
     if nick.isdigit():
-        if len(nick) == 3:
-            for i in bsInternal._getForegroundHostActivity().players:
-                if str(i.getInputDevice().getClientID()) == nick:
-                    return i
+        for i in bsInternal._getForegroundHostActivity().players:
+            if str(i.getInputDevice().getClientID()) == nick:
+                return i
         if int(nick) < len(bsInternal._getForegroundHostActivity().players):
             return bsInternal._getForegroundHostActivity().players[int(nick)]
     else:
@@ -212,8 +183,8 @@ def give(p, nick, amount, reason):
     reason = reason if reason != '' else 'Gift :>'
     bs.screenMessage(u'Success | {} > {}\ue01f > {} | Reason: {}'.format(
         p.getName(True), amount, taker_player.getName(True), reason),
-                     transient=True,
-                     color=(0.5, 1, 0.5))
+        transient=True,
+        color=(0.5, 1, 0.5))
 
 
 def pito(p, nick):
@@ -228,12 +199,16 @@ def pito(p, nick):
         return
     bsInternal._chatMessage(u'{} acaba de meterle el pito muy fuerte a {}'.format(
         p.getName(True), taker_player.getName(True)))
+
+
 def take(p, nick, amount, reason):
     try:
         amount = abs(int(amount))
     except:
         return
-    if not p.get_account_id() in [some.ownerid,some.admin_id]: bs.screenMessage('You are not the host'); return
+    if not p.get_account_id() in [some.ownerid, some.admin_id]:
+        bs.screenMessage('You are not the host')
+        return
     taker_player = getPlayerFromNick(nick)
     taker = taker_player.get_account_id()
     t = db.getData(taker)
@@ -242,8 +217,8 @@ def take(p, nick, amount, reason):
     reason = reason if reason != '' else 'Penalty'
     bs.screenMessage(u'{} lost {}\ue01f | Reason: {}'.format(
         taker_player.getName(True), amount, reason),
-                     transient=True,
-                     color=(1, 0.5, 0.5))
+        transient=True,
+        color=(1, 0.5, 0.5))
 
 
 def bet(i, amt):
@@ -269,11 +244,11 @@ def bet(i, amt):
                          color=(1, .2, .2))
     else:
         bet_num = random.random()
-        if bet_num <= 0:  #(0.33 if 'luckycharm' in stats['i'] else 0.25):
+        if bet_num <= 0:  # (0.33 if 'luckycharm' in stats['i'] else 0.25):
             stats['p'] += int(amt * multiplier)
             bs.screenMessage(u'Yaay! You won {} \ue01f'.format(
                 int(amt * multiplier)),
-                             color=(.5, 1, .5))
+                color=(.5, 1, .5))
         else:
             stats['p'] -= amt
             bs.screenMessage(

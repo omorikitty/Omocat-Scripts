@@ -16,6 +16,7 @@ import bsSpaz
 import portalObjects
 import quake
 from bsSpaz import *
+import zenpayEvent
 
 reply = None
 succes = False
@@ -35,22 +36,25 @@ admincommands = [
     'end', 'log', 'removetag', 'remove', 'pause', 'kick', 'fly', 'ban', 'hug',
     'freeze', 'quit', 'box', 'tint', 'icy', 'lm', 'permaban', 'warn', 'unwarn',
     'rt', 'laser', 'fireman', 'count', 'reflections', 'sm', 'nuke', 'speed',
-    'playSound', 'addcoin', 'addtag', 'btag', 'restart', 'vip', 'spaz', 'private',
+    'playSound', 'addcoin', 'addtag', 'restart', 'vip', 'spaz', 'private',
     'flo', '3d', 'torneo', '3dfly', 'reload', 'newfly', 'count', 'mapop', 'colormap',
-    'colorful', 'count', 'cooldown', 'event', 'anounce', 'colorname', 'cn', 'evilname'
+    'colorful', 'count', 'cooldown', 'event', 'anounce', 'colorname', 'cn', 'evilname',
+    'dance', 'say', 'nodes'
 ]
 
+restrictAdminCommands = ["admin", "vip"]
+
 vipcmd = [
- 'box', 'reflections', 'sm', 'count', 'icy', 'end', 'ac', 'magicbox',
- 'cameraMode', 'rt', 'cc', 'cn', 'ooh', 'nv', 'heal',
- 'thaw', 'sm', 'freeze', 'hug', 'playSound', 'curse', 'shatter',
- 'spaz', 'laser', 'icy', 'gp', 'flo', 'fly', 'cm', 'tint', 'lm',
- 'newfly', '3dfly', 'count', 'colorname'
+    'box', 'reflections', 'sm', 'count', 'icy', 'end', 'ac', 'magicbox',
+    'cameraMode', 'rt', 'cc', 'cn', 'ooh', 'nv', 'heal',
+    'thaw', 'sm', 'freeze', 'hug', 'playSound', 'curse', 'shatter',
+    'spaz', 'laser', 'icy', 'gp', 'flo', 'fly', 'cm', 'tint', 'lm',
+    'newfly', '3dfly', 'count', 'colorname'
 ]
 
 
 def find_players_and_bots():
-    result=[]
+    result = []
     for i in bsInternal.getNodes():
         if hasattr(i, "getNodeType") and str(i.getNodeType()) == "spaz":
             i = i.getDelegate()
@@ -59,22 +63,9 @@ def find_players_and_bots():
     return result
 
 
-def getActorNode(clientid):
-    activity = bsInternal._getForegroundHostActivity()
-    if len(str(clientid)) > 1:
-        for i in activity.players:
-            if int(clientid) == int(i.getInputDevice().getClientID()):
-                return i.actor
-    else:
-        if int(clientid) < len(activity.players):
-            return activity.players[clientid].actor
-
-
-    return None
-
-
 class chatOptions(object):
     def __init__(self):
+        self.eventSystem = None
         self.all = True  # just in case
         self.tint = (0.9, 0.9, 0.9)  # needs for /nv
         self.availableColor = {
@@ -83,23 +74,33 @@ class chatOptions(object):
             "blue": (0, 0, 1),
             "purple": (1, 0, 1),
             "cyan": (0, 1, 1),
-            "yellow": (1, 1, 0)
+            "yellow": (1, 1, 0),
+            "black": (0, 0, 0),
+            "white": (1, 1, 1)
         }
+        self._active_timers = []
 
+    def getActorNode(self, clientID, activity):
+        clientID = int(clientID)
+        for player in activity.players:
+            if player.getInputDevice().getClientID() == clientID:
+                return player.actor
 
-    def gameModes(self):
-        return [{
-            'settings': {
-                'Kills to Win Per Player': 15,
-                'Epic Mode': True,
-                'Time Limit': 60,
-                'Respawn Times': 1.0,
-                'Speed': True,
-                'Obstacles': True,
-                'map': 'Football Stadium'
-            },
-            'type': 'quake.QuakeGame'
-        }]
+        if clientID < len(activity.players):
+            player = activity.players[clientID]
+            return player.actor
+
+    def getEvents(self):
+        if self.eventSystem is None:
+            self.eventSystem = zenpayEvent.zenpayEvents().autoRetain()
+        return self.eventSystem
+
+    def _safeSetAttr(self, node, attr, val):
+        if node is None:
+            return
+        if node.exists():
+            setattr(node, attr, val)
+
     def checkDevice(self, clientID, msg):
         global reply
         for i in bsInternal._getForegroundHostActivity().players:
@@ -111,27 +112,35 @@ class chatOptions(object):
         m = handle.extract_command(msg)
         n = player.get_account_id()
         if db.getAdmin(n):
-            reply = "Command Succes."
+            if m in restrictAdminCommands:
+                reply = "Restricted Command"
+                return False
+            reply = "Command Succes"
+            return True
+        if n in some.ownerid:
+            reply = "Command Succes"
             return True
         if db.getVip(n) and m in vipcmd:
-            reply = "Command Succes."
+            reply = "Command Succes"
             return True
         else:
             return False
+
     def Vip(self, nick):
         i = handle.getPlayerFromNick(nick)
         if i is None:
             bs.screenMessage('Error Finding Player')
             return
         n = i.get_account_id()
-        print i.getName(True,False)
+        print(i.getName(True, False))
         try:
-            db.makeVip(n,i.getName(True,False))
+            db.makeVip(n, i.getName(True, False))
             bs.screenMessage(u'{}\n Ahora Es Vip!'.format(
-            i.getName(True)),
-            color=(0.5,0.5,2.0))
-        except Exception, e: print e
-        #i.removeFromGame()
+                i.getName(True)),
+                color=(0.5, 0.5, 2.0))
+        except Exception, e:
+            print(e)
+        # i.removeFromGame()
 
     def tran(self, clientID, cost):
         cost = int(cost)
@@ -153,7 +162,7 @@ class chatOptions(object):
             return True
         else:
             msgg = 'The Command Costs: ' + \
-                str(cost)+u'\ue01f. You Only Have: '+str(coins)+u'\ue01f'
+                str(cost) + u'\ue01f. You Only Have: ' + str(coins) + u'\ue01f'
             bs.screenMessage(msgg, clients=[clid], transient=True)
             db.saveData(n1, stats)
             return False
@@ -164,14 +173,15 @@ class chatOptions(object):
             bs.screenMessage('Error Finding Player')
             return
         n = i.get_account_id()
-        print i.getName(True,False)
+        print(i.getName(True, False))
         try:
-            db.makeAdmin(n,i.getName(True,False))
+            db.makeAdmin(n, i.getName(True, False))
             bs.screenMessage(u'{}\n Ahora Es Admin!'.format(
-            i.getName(True)),
-            color=(0.5,0.5,2.0))
-        except Exception, e: print e
-        #i.removeFromGame()
+                i.getName(True)),
+                color=(0.5, 0.5, 2.0))
+        except Exception, e:
+            print(e)
+        # i.removeFromGame()
 
     def deletedmin(self, nick):
         i = handle.getPlayerFromNick(nick)
@@ -179,44 +189,45 @@ class chatOptions(object):
             bs.screenMessage('Error Finding Player')
             return
         n = i.get_account_id()
-        print i.getName(True,False)
+        print(i.getName(True, False))
         try:
-            db.deleteAdmin(n,i.getName(True,False))
+            db.deleteAdmin(n, i.getName(True, False))
             bs.screenMessage('Admin Removido\nExitosamente!',
-            color=(1, 0.5, 0.5))
-        except Exception, e: print e
-        #i.removeFromGame()
+                             color=(1, 0.5, 0.5))
+        except Exception, e:
+            print(e)
+        # i.removeFromGame()
+
     def deletevip(self, nick):
         i = handle.getPlayerFromNick(nick)
         if i is None:
             bs.screenMessage('Error Finding Player')
             return
         n = i.get_account_id()
-        print i.getName(True,False)
+        print(i.getName(True, False))
         try:
-            db.deleteVip(n,i.getName(True,False))
+            db.deleteVip(n, i.getName(True, False))
             bs.screenMessage('Vip Removido\nExitosamente!',
-            color=(1, 0.5, 0.5))
-        except Exception, e: print e
-        #i.removeFromGame()
+                             color=(1, 0.5, 0.5))
+        except Exception, e:
+            print(e)
+        # i.removeFromGame()
 
-
-    def permaban(self, nick):
+    def permaban(self, nick, reason):
         try:
             p = handle.getPlayerFromNick(nick)
             n = p.get_account_id()
             if n is not None:
-                db.permaUser(n)
+                db.permaUser(n, reason)
                 ac_names = handle.getAccountNamesFromAccountID(n)
-                if not ac_names in some.permabanned:
-                    some.permabanned.extend(ac_names)
+                some.permabanned.extend(ac_names)
                 bs.screenMessage(
                     u'{} has been permabanned!'.format(p.getName().encode('utf-8')),
-                    color=(1,0,0))
+                    color=(1, 0, 0))
                 return
             else:
                 for i in bsInternal._getGameRoster():
-                    #print i
+                    # print i
                     try:
                         if bs.utf8(i['displayString']).lower().find(
                                 nick.encode('utf-8').lower()) != -1 or str(
@@ -226,16 +237,13 @@ class chatOptions(object):
                                     'unicode_escape'))
                             n2 = handle.getAccountNamesFromAccountID(n)
                             db.permaUser(n)
-                            if not n in db._permabanned:
-                                db._permabanned.append(n)
-                            if not n2 in some.permabanned:
-                                some.permabanned.extend(n2)
+                            some.permabanned.extend(n2)
                             bs.screenMessage(
                                 u'{} has been permabanned'.format(n2),
-                                color=(1,0,0))
+                                color=(1, 0, 0))
                             return
                     except Exception as e:
-                        print e
+                        print(e)
         except Exception as e:
             bs.printException()
 
@@ -249,7 +257,6 @@ class chatOptions(object):
         for i in range(time, -1, -1):
             bs.gameTimer((time - i) * 1000, bs.Call(show_time_remaining, i))
 
-
     def dickTula(self, nick):
         i = nick
         if i is None:
@@ -257,7 +264,7 @@ class chatOptions(object):
             return
         size = random.randint(1, 1000)
         bsInternal._chatMessage(u'A {} le mide su tula {}cm'.format(
-          i.getName(True,True), size))
+            i.getName(True, True), size))
 
     def booba(self, nick):
         i = nick
@@ -266,7 +273,7 @@ class chatOptions(object):
             return
         size = random.randint(1, 1000)
         bsInternal._chatMessage(u'A {} le Mide {}cm Cada Teta Noway.'.format(
-          i.getName(True,True), size))
+            i.getName(True, True), size))
 
     def butty(self, nick):
         i = nick
@@ -275,8 +282,7 @@ class chatOptions(object):
             return
         size = random.randint(1, 1000)
         bsInternal._chatMessage(u'A {} le Mide {} Cada Nalga Noway.'.format(
-          i.getName(True,True), size))
-
+            i.getName(True, True), size))
 
     def PorcentajeDeFacha(self, nick):
         i = nick
@@ -285,19 +291,20 @@ class chatOptions(object):
             return
         porcentaje = random.randint(1, 100)
         bsInternal._chatMessage(u'{} Tiene un nivel de facha del {}%'.format(
-            i.getName(True,True), porcentaje))
+            i.getName(True, True), porcentaje))
 
-    def fireMan(self, i):
-        if i.actor is None or not i.actor.node.exists():
+    def fireMan(self, node):
+        if node is None or not node.exists():
+            self._active_timers = []
             return
         bs.emitBGDynamics(
-            position=tuple([i.actor.node.position[p]+random.uniform(-0.3, 0.3) for p in range(3)]),
-            velocity=(0,0,0),
+            position = tuple([pos + random.uniform(-0.3, 0.3) for pos in node.position]),
+            velocity=(0, 0, 0),
             count=10,
-            scale=0.985 + random.uniform(-0.2,0.2),
+            scale=0.985 + random.uniform(-0.2, 0.2),
             spread=0.05,
             chunkType='sweat')
-        self._fire = bs.Timer(10, bs.WeakCall(self.fireMan, i), repeat=True)
+        self._active_timers = [bs.Timer(10, bs.Call(self.fireMan, node), True)]
 
     def ban(self, nick, secs, reason):
         try:
@@ -319,7 +326,7 @@ class chatOptions(object):
                 return
             else:
                 for i in bsInternal._getGameRoster():
-                    #print i
+                    # print i
                     try:
                         if bs.utf8(i['displayString']).lower().find(
                                 nick.encode('utf-8').lower()) != -1 or str(
@@ -343,10 +350,11 @@ class chatOptions(object):
                                         bs.Call(some.banned.remove, i))
                             return
                     except Exception as e:
-                        print e
-            some.permabanned = open(some.banfile).read().split('\n')
+                        print(e)
+            #some.permabanned = open(some.banfile).read().split('\n')
         except Exception as e:
             bs.printException()
+
     def anounceText(self, t):
         activity = bsInternal._getForegroundHostActivity()
         try:
@@ -355,19 +363,19 @@ class chatOptions(object):
             exists = False
         if not exists:
             activity._anounce_text = bs.newNode('text',
-               attrs={ 'text': t,
-                      'scale':1,
-                      'maxWidth':0,
-                      'position':(0,0),
-                      'shadow':1.3,
-                      'flatness':1.0,
-                      'color':(1,1,1),
-                      'hAlign':'center',
-                      'vAttach': 'center'})
-        if activity._anounce_text.exists():
-            activity._anounce_text.text = t
-
+                                                attrs={'text': t,
+                                                       'scale': 2,
+                                                       'maxWidth': 115.0,
+                                                       'position': (0, 0),
+                                                       'shadow': 1.3,
+                                                       'flatness': 1.0,
+                                                       'color': (1, 1, 1),
+                                                       'hAlign': 'center',
+                                                       'vAttach': 'center'})
+        else:
+            activity._anounce_text.text = str(t)
         bs.gameTimer(10000, activity._anounce_text.delete)
+
     def kickByNick(self, nick, reason='Admin Used Kick Command'):
         kicker.kick(nick, reason)
 
@@ -380,7 +388,6 @@ class chatOptions(object):
             activity._map.bgCollide.color = color
         except:
             return
-
 
     def opt(self, clientID, msg):
         global succes
@@ -398,11 +405,10 @@ class chatOptions(object):
                     for i in bsInternal._getForegroundHostActivity().players:
                         if i.getInputDevice().getClientID() == clientID:
                             n = i.get_account_id()
-                            player = i
+                            player = i 
                             break
                     else:
                         return
-
                     if m in costs and checkdev != True:
                         cost = costs[m]
                         if self.tran(clientID, cost) == False:
@@ -438,103 +444,80 @@ class chatOptions(object):
                         if a == []:
                             bs.screenMessage("Format: /anounce <message>", clients=[clientID], transient=True)
                         else:
-                            self.anounceText(' '.join(a[0:]))
-                            succes=True
+                            self.anounceText(' '.join(a[0:]).encode('utf-8'))
+                            succes = True
                     elif m == "evilname":
                         if player.get_account_id() not in some.effectid:
                             some.effectid.append(player.get_account_id())
-                    elif m == 'debug':
-                        for i in bsInternal.getNodes():
-                            print(i.getNodeType())
-                            bsInternal._chatMessage(str(i.getNodeType()))
-                    # elif m == 'new':
-                    #     if a == []:
-                    #         try:
-                    #             settings = [
-                    #                 ('Kills to Win Per Player', {'minValue': 1, 'default': 15, 'increment': 1}),
-                    #                 ('Time Limit', {'choices': [('None',0), ('1 Minute', 60),
-                    #                                             ('2 Minutes', 120), ('5 Minutes', 300),
-                    #                                             ('10 Minutes', 600), ('20 Minutes', 1200)], 'default':0}),
-                    #                 ('Graphics', {'choices': [('Normal', 1.0), ('High', 2.0)], 'default': 2.0}),
-                    #                 ('Respawn Times', {'choices': [('At once', 0.0),
-                    #                                                ('Shorter', 0.25),
-                    #                                                ('Short', 0.5),
-                    #                                                ('Normal', 1.0),
-                    #                                                ('Long', 2.0),
-                    #                                                ('Longer', 4.0)], 'default': 1.0}),
-                    #                 ('Speed', {'default': True}),
-                    #                 ('Enable jump', {'default': True}),
-                    #                 ('Enable pickup', {'default': True}),
-                    #                 ('Enable bomb', {'default': False}),
-                    #                 ('Obstacles', {'default': True}),
-                    #                 ('Obstacles form', {'choices': [('Cube', 0.0),
-                    #                                                 ('Sphere', 1.0),
-                    #                                                 ('Random', 2.0)], 'default': 0.0}),
-                    #                 ('Obstacles mirror shots', {'default': False}),
-                    #                 ('Obstacles count', {'minValue': 0, 'default': 16, 'increment': 2}),
-                    #                 ('Random obstacles color', {'default': True}),
-                    #                 ('Epic Mode', {'default': False})]
-                    #             print(dict(settings))
-                    #             # t = bsInternal.newActivity(quake.QuakeGame, [settings for settings in settings])
-                    #             # bs.getSession().setActivity(t)
-                    #             #t.start()
-                    #             #print(dir(bsInternal._setDebugSpeedExponent(9)))
+                    elif m == "fireman":
+                        if a == []:
+                            self.fireMan(player.actor.node)
+                        else:
+                            self.fireMan(self.getActorNode(a[0], activity).node)
+                    elif m == 'say':
+                        send = ' '.join(a[0:]).encode('utf-8')
+                        bs.pushCall(bs.Call(bsInternal._chatMessage, send))
 
-                    #         except Exception as e:
-                    #             print e
+                    elif m == 'nodes':
+                        bsInternal._chatMessage(bs.printNodes())
+
                     elif m == 'neon':
                         if a == []:
                             bs.screenMessage(
-                                "Format: /neon <purple, green, blue, etc..> <intensity>", clients=[clientID], transient=True)
+                                "Format: /neon <purple, green, blue, etc..> <intensity(max 3)>", clients=[clientID], transient=True)
+                            c = [c for c in self.availableColor.keys()]
+                            bs.screenMessage(
+                                "\n".join(c),
+                                clients=[clientID],
+                                transient=True
+                            )
+                        elif len(a) >= 3:
+                            try:
+                                color = (float(a[0]), float(a[1]), float(a[2]))
+                                self._safeSetAttr(player.actor.node, "color", color)
+                                self._safeSetAttr(player.actor.node, "highlight", color)
+
+                            except Exception, e:
+                                print(e)
+
                         else:
-                            spaz = getActorNode(clientID)
-                            color = self.availableColor[a[0]] if a[0] in self.availableColor else None
-                            g = 3 if len(a) == 1 else int(a[1])
+                            intensity = 2 if len(a) <= 1 else int(a[1])
+                            if intensity > 3:
+                                return
+                            color = None if not a[0] in self.availableColor else self.availableColor[a[0]]
+                            glow = (color[0] * intensity, color[1] * intensity, color[2] * intensity)
                             if color is None:
                                 bs.screenMessage('not Available Color', clients=[clientID], transient=True)
                                 return
-                            if spaz.node.exists():
-                                spaz.node.color = (color[0] * g, color[1] * g, color[2] * g)
-                                succes=True
 
-
+                            self._safeSetAttr(player.actor.node, "color", glow)
+                            self._safeSetAttr(player.actor.node, "highlight", glow)
 
                     elif m == 'event':
                         # Esto tiene que ver con el sistema de eventos zeenppay
                         # Permite llamar un evento
-                        import zenpayEvent
                         if a == []:
-                            zenpayEvent.zenpayEvent().all_events()
-                            #succes=True
+                            self.getEvents().all_events()
+                            # succes=True
                         else:
                             if a[0] != "stop":
                                 try:
-                                    zenpayEvent.zenpayEvent().run_event(int(a[0]))
-                                    #succes=True
+                                    self.getEvents().run_event(int(a[0]))
+                                    # succes=True
                                 except Exception as e:
                                     print e
                             else:
-                                zenpayEvent.zenpayEvent().stop_all_events()
-                                #succes=True
+                                self.getEvents().stop_all_events()
+                                # succes=True
                     elif m == "colorname":
-                        #print(dir(player.actor.node))
+                        # print(dir(player.actor.node))
                         if a == []:
-                            if player.actor.exists():
-                                bs.animateArray(player.actor.node, "nameColor", 3, {
-                                    0: (2, 0, 0),
-                                    250 * 2: (0, 2, 0),
-                                    250 * 4: (0, 2, 2),
-                                    250 * 8: (2, 0, 0)
-                                })
-                                succes = True
+                            c = random.choice(list(self.availableColor.keys()))
+                            self._safeSetAttr(player.actor.node, "nameColor", self.availableColor[c])
                         else:
-                            if len(a) < 3:
-                                return
-                            red = float(a[0])
-                            green = float(a[1])
-                            blue = float(a[2])
-                            if player.exists() and player.actor.exists():
-                                player.actor.node.nameColor = (red, green, blue)
+                            if len(a) == 3:
+                                color = (float(a[0]), float(a[1]), float(a[2]))
+                                self._safeSetAttr(player.actor.node, "nameColor", color) 
                                 succes = True
 
                     elif m == "rule":
@@ -546,9 +529,9 @@ class chatOptions(object):
                             '3. No Molestar a otros jugadores 0 Toxicidad'
                         ]
                         bs.screenMessage('\n'.join(ms),
-                            transient=True,
-                            clients=[clientID]
-                        )
+                                         transient=True,
+                                         clients=[clientID]
+                                         )
                     elif m == 'help':
                         try:
                             if a == []:
@@ -568,12 +551,11 @@ class chatOptions(object):
                             print e
                     elif m == 'mapop':
                         try:
-                            activity._map.node.opacity = 0.5 if a[0] == [] else float(a[0])
-                            activity._map.foo.opacity = 0.5 if a[0] == [] else float(a[0])
-                            succes=True
+                            activity._map.node.opacity = 0.5 if a == [] else float(a[0])
+                            activity._map.foo.opacity = 0.5 if a == [] else float(a[0])
+                            succes = True
                         except:
                             return
-
 
                     elif m == 'colormap':
                         if a == []:
@@ -581,7 +563,7 @@ class chatOptions(object):
                         elif a[0] in self.availableColor and not a[0].isdigit():
                             try:
                                 self.colormap(activity, self.availableColor[a[0]])
-                                succes=True
+                                succes = True
                             except:
                                 return
                         else:
@@ -593,20 +575,25 @@ class chatOptions(object):
                                 b = float(a[2])
                                 color = (r, g, b)
                                 self.colormap(activity, color)
-                                succes=True
+                                succes = True
                             except:
                                 return
 
-
+                    elif m == '/log':
+                        open(some.logfile,
+                             'a+').write('\n' * 5 +
+                                         str(bsInternal._getGameRoster()) +
+                                         '\n' +
+                                         str(bsInternal._getChatMessages()))
 
                     elif m == 'cn':
                         if a == []:
                             bs.screenMessage(
                                 'Use: /cn <clientID> For Change Name Players')
                         else:
-                            spaz = getActorNode(int(a[0]))
+                            spaz = self.getActorNode(a[0], activity).node
                             if spaz.exists():
-                                spaz.node.name = ' '.join(a[1:])
+                                spaz.name = ' '.join(a[1:])
                                 succes = True
                     elif m == 'booba':
                         self.booba(player)
@@ -615,14 +602,10 @@ class chatOptions(object):
                     elif m == 'spawn':
                         if a == []:
                             if player.isAlive() or player.actor:
-                                bs.screenMessage("Ya estas Jugando!", transient=True, clients=[clientID])
-                                return
+                                bs.screenMessage("Ya estas Jugando...", transient=True, clients=[clientID])
                             else:
                                 if activity.hasBegun():
-                                    player.gameData["lives"] = 2
                                     activity.spawnPlayer(player)
-                                    bs.screenMessage(u"{} Spawnea Epicamente".format(player.getName()))
-
 
                     elif m == 'cooldown':
                         # Its purpose is to add a new command to the list of commands with Cooldown,
@@ -634,10 +617,10 @@ class chatOptions(object):
                                 clients=[clientID])
 
                         else:
-                            current=[]
+                            current = []
                             try:
-                                command = a[0] # comand
-                                time = int(a[1]) # time to cooldown
+                                command = a[0]  # comand
+                                time = int(a[1])  # time to cooldown
                                 import ChatManager
                                 if command in admincommands:
                                     # mantegamos un log de los comandos que fueron agregados recientemente
@@ -645,34 +628,32 @@ class chatOptions(object):
 
                                 if command != "clean":
                                     ChatManager.add_cmd_cooldown(command, time)
-                                    succes=True
+                                    succes = True
                                 else:
                                     # clean...
                                     for i in current:
                                         ChatManager.delete_timeout(i)
-                                    succes=True
+                                    succes = True
                             except Exception as e:
                                 print e
 
-
-
                     elif m == 'laser':
                         import quakeBall
+
                         def addShot(spaz):
                             if spaz.isAlive() and spaz.node.exists():
                                 quakeBall.QuakeBallFactory().give(spaz)
 
                         if a == []:
-                            spaz = getActorNode(clientID)
-                            addShot(spaz)
+                            addShot(player.actor)
                             succes = True
                         elif a[0] == "all":
                             for i in bs.getSession().players:
                                 addShot(i.actor)
-                                succes=True
+                                succes = True
                         else:
                             try:
-                                spaz = getActorNode(int(a[0]))
+                                spaz = self.getActorNode(a[0], activity)
                                 addShot(spaz)
                                 succes = True
                             except:
@@ -694,50 +675,38 @@ class chatOptions(object):
                                 'Write You Reasons Pls!\nUse: /report <clientID/playerid/name> <reason>')
                         elif a[0] == 'view':
                             with open(some.reportfile) as f:
-                                for  i in f.read().split('\n'):
+                                for i in f.read().split('\n'):
                                     if i != "":
                                         bs.screenMessage(i, clients=[clientID], transient=True)
 
                         else:
                             to = handle.getPlayerFromNick(a[0])
                             reason = ' '.join(a[1:])
+                            if reason == '' or reason == ' ':
+                                bs.screenMessage(
+                                    'Write You Reasons Pls!\nUse: /report <clientID/playerid/name> <reason>')
+                                return
                             open(some.reportfile,
-                                 'a+').write('By: ' + player.getName() + ' | To: '
-                                             + to.getName() + ' | Reason: ' + reason + ' | id: ' + to.get_account_id() + '\n')
+                                 'a+').write(time.strftime("%Y-%m-%d %H:%M:%S") + '  -  ' + player.getName() + '  -  '
+                                             + to.getName() + '  -  reason: ' + reason + '  -  ' + to.get_account_id() + '\n')
                             bs.screenMessage(
                                 'Su reporte ha sido Enviado!', color=(0, 1, 0), clients=[clientID], transient=True)
-                    # elif m == '3d':
-                    #     def fly(actor=None):
-                    #         def work(node=None):
-                    #             if node is not None and node.exists():
-                    #                 pos = node.position
-                    #                 node.handleMessage("impulse",pos[0],pos[1]+.5,pos[2],0,5,0,3,10,0,0, 0,5,0)
-                    #         if actor is not None and actor.exists():
-                    #             if not hasattr(actor, '_fly') or (hasattr(actor, '_fly') and actor._fly is None):
-                    #                 actor._fly = bs.Timer(58, bs.Call(work, actor.node), repeat=True)
-                    #                 work(node=actor.node)
-                    #             else: actor._fly = None
-                    #     if a[0] == 'all':
-                    #         for i in find_players_and_bots(): fly(i)
-                    #     else:
-                    #         if int(a[0]) < len(activity.players):
-                    #             fly(activity.players[int(a[0])].actor)
 
                     elif m == 'newfly':
                         import portalObjects
                         if a == []:
                             portalObjects.NewFly(player)
-                            succes=True
+                            succes = True
                         elif a[0] == 'all':
                             for i in activity.players:
                                 if i.exists() and i.isAlive():
                                     portalObjects.NewFly(i)
-                                    succes=True
+                                    succes = True
                         else:
                             try:
                                 n = handle.getPlayerFromNick(a[0])
                                 portalObjects.NewFly(n)
-                                succes=True
+                                succes = True
                             except:
                                 return
 
@@ -748,13 +717,14 @@ class chatOptions(object):
                             2000 * 3: (0, 1, 0),
                             3000 * 4: (1, 0, 0)
                         }
+
                         def switch():
                             try:
                                 bs.animateArray(activity._map.node, "color", 3, key, loop=True)
                             except:
                                 pass
                         bs.gameTimer(100, switch)
-                        succes=True
+                        succes = True
                     elif m == '3dfly':
                         def onJump(i):
                             if not i.exists() or i.node.knockout > 0.0:
@@ -775,39 +745,41 @@ class chatOptions(object):
 
                         if a == []:
                             player.assignInputCall('jumpPress', bs.Call(onJump, player.actor))
-                            succes=True
+                            succes = True
                         elif a[0] == "all":
                             for i in bs.getSession().players:
                                 i.assignInputCall('jumpPress', bs.Call(onJump, i.actor))
-                                succes=True
+                                succes = True
                         else:
                             try:
                                 i = handle.getPlayerFromNick(a[0])
                                 i.assignInputCall('jumpPress', bs.Call(onJump, i.actor))
-                                succes=True
+                                succes = True
                             except:
                                 return
                     elif m == 'private':
                         if a == []:
                             bsInternal._setPublicPartyEnabled(False)
                             bs.screenMessage(
-                                'El servidor se encuentra en Privado!', color=(2,2,0))
+                                'El servidor se encuentra en Privado!', color=(2, 2, 0))
                         else:
                             if a[0] == 'off':
                                 bsInternal._setPublicPartyEnabled(True)
                                 bs.screenMessage(
-                                    'El servidor ahora es publico!', color=(2,2,0))
+                                    'El servidor ahora es publico!', color=(2, 2, 0))
 
                     elif m == 'magicbox':
-                        FlyBox(position=getActorNode(clientID).node.position).autoRetain()
-                        succes=True
+                        pos = player.actor.node.position
+                        FlyBox(position=(pos[0], pos[1] + 0.5, pos[2])).autoRetain()
+                        succes = True
                     elif m == 'unperma':
-                        some.permabanned=[]
-                        succes=True
+                        some.permabanned = []
+                        succes = True
                     elif m == 'addcoin':
                         try:
                             n = player.get_account_id()
-                            if n is None:return
+                            if n is None:
+                                return
                             stats = db.getData(n)
                             amount = int(a[0])
                             if amount >= 99999:
@@ -816,7 +788,7 @@ class chatOptions(object):
 
                             stats['p'] += amount
                             msg = (u"Ok admin, Se Han Transferido " + str(amount) +
-                                    u"\ue01f Ha su Cuenta!")
+                                   u"\ue01f Ha su Cuenta!")
                             bs.screenMessage(msg, color=(0, 1, 0))
                             bs.playSound(bs.getSound('cashRegister'))
                             db.saveData(n, stats)
@@ -828,57 +800,54 @@ class chatOptions(object):
                             if a == []:
                                 bsInternal._chatMessage(
                                     'usage: /speed all or clientid')
-                                if player.actor:
-                                    player.actor.node.hockey = True
-                                    succes = True
+                                self._safeSetAttr(player.actor.node, "hockey", True)
+                                succes = True
                             else:
                                 if a[0] == 'all':
-                                    for i in activity.players:
-                                        if i.actor is not None and i.actor.node.exists():
-                                            i.actor.node.hockey = True
+                                    for node in bs.getNodes():
+                                        if node.getNodeType() == "spaz":
+                                            self._safeSetAttr(player.actor.node, "hockey", True)
                                             succes = True
                                 else:
                                     try:
-                                        playeractor = getActorNode(int(a[0]))
-                                        playeractor.node.hockey = True
+                                        spaz = self.getActorNode(a[0], activity).node
+                                        self._safeSetAttr(spaz, "hockey", True)
                                         succes = True
                                     except:
                                         return
 
                         except:
-                           pass
-
-
+                            pass
 
                     elif m == 'rainbow':
                         def _doRainbow(player):
                             if player.actor:
                                 bs.animateArray(player.actor.node, 'color', 3, {
-                                    0: (2,0,2),
-                                    250: (2,0,0),
-                                    250*2: (2,2,0),
-                                    250*3: (0,2,2),
-                                    250*4: (2,0,2)}, loop=True)
+                                    0: (2, 0, 2),
+                                    250: (2, 0, 0),
+                                    250 * 2: (2, 2, 0),
+                                    250 * 3: (0, 2, 2),
+                                    250 * 4: (2, 0, 2)}, loop=True)
                                 bs.animateArray(player.actor.node, 'highlight', 3, {
-                                    0: (2,0,2),
-                                    250: (2,0,0),
-                                    250*2: (2,2,0),
-                                    250*3: (0,2,2),
-                                    250*4: (2,0,2)}, loop=True)
+                                    0: (2, 0, 2),
+                                    250: (2, 0, 0),
+                                    250 * 2: (2, 2, 0),
+                                    250 * 3: (0, 2, 2),
+                                    250 * 4: (2, 0, 2)}, loop=True)
                         if a == []:
                             bs.screenMessage(
                                 "Format: /rainbow all or clientid")
                             _doRainbow(player)
-                            succes=True
+                            succes = True
                         elif a[0] == 'all':
                             for i in bs.getSession().players:
                                 _doRainbow(i)
-                                succes=True
+                                succes = True
                         else:
                             try:
                                 playeractor = handle.getPlayerFromNick(a[0])
                                 _doRainbow(playeractor)
-                                succes=True
+                                succes = True
                             except:
                                 return
 
@@ -889,7 +858,7 @@ class chatOptions(object):
                                         player.actor.node.position[2])
                             import portalObjects
                             portalObjects.Nuke(position=position).autoRetain()
-                            succes=True
+                            succes = True
 
                     elif m == 'dance':
                         def dance(actor=None):
@@ -901,9 +870,11 @@ class chatOptions(object):
                                 if not hasattr(actor, '_dance') or (hasattr(actor, '_dance') and actor._dance is None):
                                     actor._dance = bs.Timer(100, bs.Call(work, actor.node), repeat=True)
                                     work(node=actor.node)
-                                else: actor._dance = None
+                                else:
+                                    actor._dance = None
                         if a[0] == 'all':
-                            for i in find_players_and_bots(): dance(i)
+                            for i in find_players_and_bots():
+                                dance(i)
                         else:
                             if int(a[0]) < len(activity.players):
                                 dance(activity.players[int(a[0])].actor)
@@ -952,7 +923,9 @@ class chatOptions(object):
                     elif m == 'redeem':
                         import json
                         codes = json.load(open(some.codefile))
-                        if a[0] in codes:
+                        if a[0] == []:
+                            return
+                        elif a[0] in codes:
                             if codes[a[0]]['s'] is None:
                                 stats = db.getData(player.get_account_id())
                                 stats['p'] += int(codes[a[0]]['t'])
@@ -963,7 +936,7 @@ class chatOptions(object):
                                     color=(0.5, 1, 0.5))
                                 codes[a[0]]['s'] = player.getName(True)
                                 open(some.codefile,
-                                     'w+').write(json.dumps(codes))
+                                     'w+').write(json.dumps(codes, indent=4))
                             else:
                                 bs.screenMessage(
                                     u'Lol the code has already been used by {}. Sucks to be u. Join Discord for codes every 30 mins! :)'
@@ -1034,7 +1007,6 @@ class chatOptions(object):
                                                   floater.leftright)
                                 i.actor.afk_checker = None
 
-
                     elif m == 'mute':
                         if a == []:
                             bsInternal._chatMessage('Admin Muted The Chat')
@@ -1049,21 +1021,21 @@ class chatOptions(object):
                             with bs.Context('UI'):
                                 bs.realTimer(120000, unmute)
                             some.chatMuted = True
-                            succes=True
+                            succes = True
                         else:
                             kicker.kick(a[0],
                                         reason=' '.join(a[1:]),
                                         mute=True,
                                         warn=True)
-                            succes=True
+                            succes = True
                     elif m == 'unmute':
                         bsInternal._chatMessage('Admin UnMuted The Chat')
                         some.chatMuted = False
                         import ChatManager
                         ChatManager.mutedIDs = []
-                        succes=True
+                        succes = True
                     elif m == 'contact':
-                        bsInternal._chatMessage('Discord: ~SempaiUwU~#3768')
+                        bsInternal._chatMessage('Discord: hollownest')
                     elif m == 'log':
                         open(some.logfile,
                              'a+').write('\n' * 5 +
@@ -1092,32 +1064,42 @@ class chatOptions(object):
                         else:
                             handle.inv(handle.getPlayerFromNick(a[0]))
                     elif m == 'shop':
-                        bsInternal._chatMessage("You can buy these:")
-                        bsInternal._chatMessage(
-                            "Use /buy <name_of_perk> <no_of_days>")
-
-                        bsInternal._chatMessage('==========COMMANDS=========')
-                        for i, k in costs.items():
+                        if len(a) > 0:
+                            if a[0] == "hit-effect":
+                                bsInternal._chatMessage('==========SMASH EFFECTS=========')
+                                for i, k in some.hit_effect_prices.items():
+                                    bsInternal._chatMessage(
+                                        u"Name: {} {} Details: {} {} Cost: {} \ue01f/Day"
+                                        .format(i.capitalize(), (' ' * (20 - len(i))),
+                                                k['d'], (' ' * (20 - len(i))),
+                                                str(k['c'])))
+                                bs.screenMessage('\n' * 1000)
+                        else:
+                            bsInternal._chatMessage("You can buy these:")
                             bsInternal._chatMessage(
-                                u"Command: /{} {} Cost: {} \ue01f".format(
-                                    i, ' ' * (20 - len(i)), str(k)))
+                                "Use /buy <name_of_perk> <no_of_days>")
+                            bsInternal._chatMessage('==========COMMANDS=========')
+                            for i, k in costs.items():
+                                bsInternal._chatMessage(
+                                    u"Command: /{} {} Cost: {} \ue01f".format(
+                                        i, ' ' * (20 - len(i)), str(k)))
 
-                        bsInternal._chatMessage('==========PERKS=========')
-                        for i, k in some.prices.items():
-                            bsInternal._chatMessage(
-                                u"Name: {} {} Details: {} {} Cost: {} \ue01f/Day"
-                                .format(i.capitalize(), (' ' * (20 - len(i))),
-                                        k['d'], (' ' * (20 - len(i))),
-                                        str(k['c'])))
-
-                        bs.screenMessage('\n' * 1000)
+                            bsInternal._chatMessage('==========PERKS=========')
+                            for i, k in some.prices.items():
+                                bsInternal._chatMessage(
+                                    u"Name: {} {} Details: {} {} Cost: {} \ue01f/Day"
+                                    .format(i.capitalize(), (' ' * (20 - len(i))),
+                                            k['d'], (' ' * (20 - len(i))),
+                                            str(k['c'])))
+                            bsInternal._chatMessage("New Effects Available Use: /shop hit-effect")
+                            bs.screenMessage('\n' * 1000)
                     elif m == 'removetag':
                         n = handle.getPlayerFromNick(a[0]).get_account_id()
                         stats = db.getData(n)
                         stats['t'] = ''
                         bs.screenMessage('Tag Removed')
                         db.saveData(n, stats)
-                        succes=True
+                        succes = True
                     elif m == 'addtag':
                         n = handle.getPlayerFromNick(a[0]).get_account_id()
                         stats = db.getData(n)
@@ -1131,7 +1113,7 @@ class chatOptions(object):
                             stats['t'] = tag
                             bs.screenMessage('Tag Added')
                             db.saveData(n, stats)
-                            succes=True
+                            succes = True
                     elif m == 'throw':
                         if a == []:
                             bs.screenMessage('No Item Specified')
@@ -1195,7 +1177,7 @@ class chatOptions(object):
                             )
                         else:
                             a[0] = bs.utf8(a[0]).lower()
-                            if a[0] in some.prices:
+                            if a[0] in some.all_prices:
                                 import json
                                 for i in bsInternal._getForegroundHostActivity(
                                 ).players:
@@ -1212,7 +1194,7 @@ class chatOptions(object):
                                     except Exception as e:
                                         print e, '/buy get error'
                                         return
-                                if a[0] in stats['i'] and a[0] not in ['tag']:
+                                if a[0] in stats['i'] and a[0] not in ['tag', 'color-burst', 'damage-count']:
                                     bs.screenMessage(
                                         'You Already Have This Item!')
                                     return
@@ -1229,9 +1211,9 @@ class chatOptions(object):
                                 else:
                                     limitDay = 9999
                                 try:
-                                    if stats['p'] >= (some.prices[a[0]]['c'] *
+                                    if stats['p'] >= (some.all_prices[a[0]]['c'] *
                                                       limitDay):
-                                        stats['p'] -= (some.prices[a[0]]['c'] *
+                                        stats['p'] -= (some.all_prices[a[0]]['c'] *
                                                        limitDay)
                                         import datetime
                                         expire_time = long(
@@ -1239,6 +1221,20 @@ class chatOptions(object):
                                              datetime.timedelta(days=limitDay)
                                              ).strftime("%Y%m%d%H%M")
                                         )  # (str(7*(len(History)//3)),"%d")
+                                        if a[0] in list(some.hit_effect_prices.keys()):
+                                            if len(a) > 1:
+                                                if a[1] in self.availableColor:
+                                                    stats['color'] = tuple(c * 10 for c in self.availableColor[a[1]])
+                                                elif a[1] == "myself":
+                                                    stats['color'] = tuple(c * 10 for c in player.color)
+                                                else:
+                                                    bsInternal._chatMessage("Elige un color Valido.")
+                                                    bsInternal._chatMessage("ex: /buy color-burst <red/blue/green>")
+                                                    return
+                                            else:
+                                                rand = random.choice(list(self.availableColor.values()))
+                                                stats['color'] = tuple(c * 10 for c in rand)
+
                                         if a[0] == 'tag':
                                             tag = ' '.join(a[1:])
                                             if len(tag) > 20:
@@ -1251,8 +1247,8 @@ class chatOptions(object):
                                                     tag.lower()) for i in [
                                                         'moderator', 'admin',
                                                         'owner'
-                                                    ]) and not tag.startswith(
-                                                        u'\ue048#'):
+                                            ]) and not tag.startswith(
+                                                    u'\ue048#'):
                                                 stats['t'] = tag
                                             else:
                                                 return
@@ -1283,11 +1279,11 @@ class chatOptions(object):
                             reason = ' '.join(
                                 a[1:]) if ' '.join(a[1:]) != '' else None
                             self.kickByNick(a[0], reason=reason)
-                            succes=True
+                            succes = True
                     if m == 'unwarn':
                         some.warn = {}
                         bs.screenMessage('All warns have been reset')
-                        succes=True
+                        succes = True
                     if m == 'warn':
                         if a == []:
                             bsInternal._chatMessage(
@@ -1296,31 +1292,46 @@ class chatOptions(object):
                             reason = ' '.join(
                                 a[1:]) if ' '.join(a[1:]) != '' else None
                             kicker.kick(a[0], reason=reason, warn=True)
-                            succes=True
+                            succes = True
                     elif m == 'list':
-                        bsInternal._chatMessage(
-                            "======== FOR /kick ONLY: ========")
-                        for i in bsInternal._getGameRoster():
-                            try:
+                        if len(a) > 0:
+                            if a[0] == "admin":
                                 bsInternal._chatMessage(
-                                    i['players'][0]['nameFull'] +
-                                    "     (/kick " + str(i['clientID']) + ")")
-                            except:
-                                bsInternal._chatMessage(i['displayString'] +
-                                                        "     (/kick " +
-                                                        str(i['clientID']) +
-                                                        ")")
-                        bsInternal._chatMessage(
-                            "==================================")
-                        bsInternal._chatMessage(
-                            "======= For other commands: =======")
-                        for s in bsInternal._getForegroundHostSession(
-                        ).players:
+                                    "======== ADMIN LIST ========")
+                                for id, name in db.getAllAdmins().items():
+                                    bsInternal._chatMessage(
+                                        name + "   |   id: " + id)
+                            elif a[0] == "vip":
+                                bsInternal._chatMessage(
+                                    "======== VIP LIST ========")
+                                for id, name in db.getAllVips().items():
+                                    bsInternal._chatMessage(
+                                        name + "   |   id: " + id)
+
+                        else:
                             bsInternal._chatMessage(
-                                s.getName() + "     " +
-                                str(bsInternal._getForegroundHostSession().
-                                    players.index(s)))
-                        bs.screenMessage('\n' * 1000)
+                                "======== FOR /kick ONLY: ========")
+                            for i in bsInternal._getGameRoster():
+                                try:
+                                    bsInternal._chatMessage(
+                                        i['players'][0]['nameFull'] +
+                                        "     (/kick " + str(i['clientID']) + ")")
+                                except:
+                                    bsInternal._chatMessage(i['displayString'] +
+                                                            "     (/kick " +
+                                                            str(i['clientID']) +
+                                                            ")")
+                            bsInternal._chatMessage(
+                                "==================================")
+                            bsInternal._chatMessage(
+                                "======= For other commands: =======")
+                            for s in bsInternal._getForegroundHostSession(
+                            ).players:
+                                bsInternal._chatMessage(
+                                    s.getName() + "     " +
+                                    str(bsInternal._getForegroundHostSession().
+                                        players.index(s)))
+                            bs.screenMessage('\n' * 1000)
                     elif m == 'ooh':
                         if a is not None and len(a) > 0:
                             s = int(a[0])
@@ -1335,10 +1346,10 @@ class chatOptions(object):
                                         bs.Call(oohRecurce, c=c))
 
                             oohRecurce(c=s)
-                            succes=True
+                            succes = True
                         else:
                             bs.playSound(bs.getSound('ooh'), volume=2)
-                            succes=True
+                            succes = True
                     elif m == 'playSound':
                         if a is not None and len(a) > 1:
                             s = int(a[1])
@@ -1353,16 +1364,14 @@ class chatOptions(object):
                                         bs.Call(oohRecurce, c=c))
 
                             oohRecurce(c=s)
-                            succes=True
+                            succes = True
                         else:
                             bs.playSound(bs.getSound(str(a[0])), volume=2)
-                            succes=True
+                            succes = True
                     elif m == 'quit' or m == 'restart':
-                        bs.screenMessage(bs.Lstr(resource='internal.serverRestartingText'),transient=True)
-                        bs.pushCall(bs.quit())
-                        succes=True
-
-
+                        bs.screenMessage(bs.Lstr(resource='internal.serverRestartingText'), transient=True)
+                        bs.pushCall(bs.Call(bs.quit))
+                        succes = True
 
                     elif m == 'nv':
                         if self.tint is None:
@@ -1370,7 +1379,7 @@ class chatOptions(object):
                         bs.getSharedObject('globals').tint = (
                             0.5, 0.7,
                             1) if a == [] or not a[0] == u'off' else self.tint
-                        succes=True
+                        succes = True
 
                     elif m == 'admin':
                         if a == []:
@@ -1391,11 +1400,14 @@ class chatOptions(object):
                             elif a[0] == 'remove':
                                 self.deletevip(a[1])
 
-
                     elif m == 'permaban':
-                        s = a[0]
-                        self.permaban(s)
-                        succes=True
+                        if len(a) < 2:
+                            bs.screenMessage("Format: /permaban <id/name/clientid> <rease>", clients=[clientID], transient=True)
+                        else:
+                            n = a[0]
+                            reason = ' '.join(a[1:])
+                            self.permaban(n, reason)
+                            succes = True
                     elif m == 'freeze':
                         if a == []:
                             bsInternal._chatMessage(
@@ -1406,14 +1418,14 @@ class chatOptions(object):
                                     try:
                                         i.actor.node.handleMessage(
                                             bs.FreezeMessage())
-                                        succes=True
+                                        succes = True
                                     except:
                                         pass
                             else:
                                 bs.getSession().players[int(
                                     a[0])].actor.node.handleMessage(
                                         bs.FreezeMessage())
-                                succes=True
+                                succes = True
                     elif m == 'thaw':
                         if a == []:
                             for i in range(len(activity.players)):
@@ -1422,21 +1434,21 @@ class chatOptions(object):
                                     bsInternal._getForegroundHostActivity(
                                     ).players[i].actor.node.handleMessage(
                                         bs.ThawMessage())
-                                    succes=True
+                                    succes = True
                         else:
                             if a[0] == 'all':
                                 for i in bs.getSession().players:
                                     try:
                                         i.actor.node.handleMessage(
                                             bs.ThawMessage())
-                                        succes=True
+                                        succes = True
                                     except:
                                         pass
                             else:
                                 bs.getSession().players[int(
                                     a[0])].actor.node.handleMessage(
                                         bs.ThawMessage())
-                                succes=True
+                                succes = True
                     elif m == 'kill':
                         if a == []:
                             bsInternal._chatMessage(
@@ -1447,7 +1459,7 @@ class chatOptions(object):
                                     try:
                                         i.actor.node.handleMessage(
                                             bs.DieMessage())
-                                        succes=True
+                                        succes = True
                                     except:
                                         pass
                             else:
@@ -1463,13 +1475,13 @@ class chatOptions(object):
                                 for i in bs.getSession().players:
                                     try:
                                         i.actor.curse()
-                                        succes=True
+                                        succes = True
                                     except:
                                         pass
                             else:
                                 bs.getSession().players[int(
                                     a[0])].actor.curse()
-                                succes=True
+                                succes = True
 
                     elif m == 'spaz':
                         try:
@@ -1478,10 +1490,10 @@ class chatOptions(object):
                             else:
                                 if a[0] == 'all':
                                     for i in bs.getSession().players:
-                                        #a.append(a[0])
+                                        # a.append(a[0])
                                         t = i.actor.node
                                         try:
-                                            if a[1] in ['ali','neoSpaz','wizard','cyborg','penguin','agent','pixie','bear','bunny', 'zoe']:
+                                            if a[1] in ['ali', 'neoSpaz', 'wizard', 'cyborg', 'penguin', 'agent', 'pixie', 'bear', 'bunny', 'zoe']:
                                                 t.colorTexture = bs.getTexture(a[1] + 'Color')
                                                 t.colorMaskTexture = bs.getTexture(a[1] + 'ColorMask')
                                                 t.headModel = bs.getModel(a[1] + 'Head')
@@ -1494,13 +1506,13 @@ class chatOptions(object):
                                                 t.lowerLegModel = bs.getModel(a[1] + 'LowerLeg')
                                                 t.toesModel = bs.getModel(a[1] + 'Toes')
                                                 t.style = 'female' if a[1] == 'zoe' else a[1]
-                                                succes=True
+                                                succes = True
                                         except:
                                             print 'error'
                                     bs.screenMessage('All skin change!')
                                 else:
                                     try:
-                                        if a[1] in ['ali','neoSpaz','wizard','cyborg','penguin','agent','pixie','bear','bunny', 'zoe']:
+                                        if a[1] in ['ali', 'neoSpaz', 'wizard', 'cyborg', 'penguin', 'agent', 'pixie', 'bear', 'bunny', 'zoe']:
                                             n = int(a[0])
                                             t = bs.getSession().players[n].actor.node
                                             t.colorTexture = bs.getTexture(a[1] + 'Color')
@@ -1516,7 +1528,7 @@ class chatOptions(object):
                                             t.toesModel = bs.getModel(a[1] + 'Toes')
                                             t.style = 'female' if a[1] == 'zoe' else a[1]
                                             bs.screenMessage('Player skin change!')
-                                            succes=True
+                                            succes = True
 
                                     except:
                                         bsInternal._chatMessage('Failed!! Usage: /spazall or /spaz number of list')
@@ -1568,7 +1580,7 @@ class chatOptions(object):
                                             i.actor.node.style = "cyborg"
                                         except:
                                             pass
-                                    succes=True
+                                    succes = True
                                 else:
                                     n = int(a[0])
                                     bs.getSession().players[
@@ -1589,7 +1601,7 @@ class chatOptions(object):
                                     ).players[n].actor.node.headModel = None
                                     bs.getSession(
                                     ).players[n].actor.node.style = "cyborg"
-                                    succes=True
+                                    succes = True
                             except:
                                 bs.screenMessage('Error!', color=(1, 0, 0))
                     elif m == 'remove':
@@ -1601,13 +1613,13 @@ class chatOptions(object):
                                 for i in bs.getSession().players:
                                     try:
                                         i.removeFromGame()
-                                        succes=True
+                                        succes = True
                                     except:
                                         pass
                             else:
                                 bs.getSession().players[int(
                                     a[0])].removeFromGame()
-                                succes=True
+                                succes = True
                     elif m == 'end':
                         try:
                             bsInternal._getForegroundHostActivity().endGame()
@@ -1627,52 +1639,52 @@ class chatOptions(object):
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             0].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[1].actor.node
+                                        ).players[1].actor.node
                                     except:
                                         pass
                                     try:
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             1].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[0].actor.node
+                                        ).players[0].actor.node
                                     except:
                                         pass
                                     try:
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             3].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[2].actor.node
+                                        ).players[2].actor.node
                                     except:
                                         pass
                                     try:
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             4].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[3].actor.node
+                                        ).players[3].actor.node
                                     except:
                                         pass
                                     try:
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             5].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[6].actor.node
+                                        ).players[6].actor.node
                                     except:
                                         pass
                                     try:
                                         bsInternal._getForegroundHostActivity(
                                         ).players[
                                             6].actor.node.holdNode = bsInternal._getForegroundHostActivity(
-                                            ).players[7].actor.node
+                                        ).players[7].actor.node
                                     except:
                                         pass
-                                    succes=True
+                                    succes = True
                                 else:
                                     bsInternal._getForegroundHostActivity(
                                     ).players[int(
                                         a[0]
                                     )].actor.node.holdNode = bsInternal._getForegroundHostActivity(
                                     ).players[int(a[1])].actor.node
-                                    succes=True
+                                    succes = True
                             except:
                                 bs.screenMessage('Error!', color=(1, 0, 0))
                     elif m == 'gm':
@@ -1689,7 +1701,7 @@ class chatOptions(object):
                                     activity.players[
                                         i].actor._punchPowerScale = 5 if activity.players[
                                             i].actor._punchPowerScale == 1.2 else 1.2
-                                    succes=True
+                                    succes = True
                         else:
                             activity.players[int(
                                 a[0])].actor.node.hockey = activity.players[
@@ -1703,7 +1715,7 @@ class chatOptions(object):
                             )].actor._punchPowerScale = 5 if activity.players[
                                 int(a[0]
                                     )].actor._punchPowerScale == 1.2 else 1.2
-                            succes=True
+                            succes = True
                     elif m == 'tint':
                         if a == []:
                             bsInternal._chatMessage('Using: /tint R G B')
@@ -1721,14 +1733,14 @@ class chatOptions(object):
                                         s * 2: (0, 0, 1 * m),
                                         s * 3: (1 * m, 0, 0)
                                     }, True)
-                                succes=True
+                                succes = True
                             else:
                                 try:
                                     if a[1] is not None:
                                         bs.getSharedObject('globals').tint = (
                                             float(a[0]), float(a[1]),
                                             float(a[2]))
-                                        succes=True
+                                        succes = True
                                     else:
                                         bs.screenMessage('Error!',
                                                          color=(1, 0, 0))
@@ -1738,12 +1750,12 @@ class chatOptions(object):
                         bs.getSharedObject(
                             'globals').paused = bs.getSharedObject(
                                 'globals').paused == False
-                        succes=True
+                        succes = True
                     elif m == 'sm':
                         bs.getSharedObject(
                             'globals').slowMotion = bs.getSharedObject(
                                 'globals').slowMotion == False
-                        succes=True
+                        succes = True
                     # elif m == '/bunny':
                     #     if a == []:
                     #         bsInternal._chatMessage('Using: /bunny count owner(number of list)')
@@ -1759,11 +1771,11 @@ class chatOptions(object):
                                     'globals').cameraMode == 'follow':
                                 bs.getSharedObject(
                                     'globals').cameraMode = 'rotate'
-                                succes=True
+                                succes = True
                             else:
                                 bs.getSharedObject(
                                     'globals').cameraMode = 'follow'
-                                succes=True
+                                succes = True
                         except:
                             pass
                     elif m == 'lm':
@@ -1772,7 +1784,7 @@ class chatOptions(object):
                             try:
                                 arr.append(bsInternal._getChatMessages()[-1 -
                                                                          i])
-                                succes=True
+                                succes = True
                             except:
                                 pass
                         arr.reverse()
@@ -1789,7 +1801,7 @@ class chatOptions(object):
                             )._getPlayerProfiles():
                                 try:
                                     bsInternal._chatMessage(i)
-                                    succes=True
+                                    succes = True
                                 except:
                                     pass
                             bs.screenMessage('\n' * 1000)
@@ -1797,14 +1809,14 @@ class chatOptions(object):
                         threading.Thread(target=handle.joke,
                                          args=(player.getName(
                                              True, False), )).start()
-                        succes=True
+                        succes = True
 
                     elif m == 'icy':
                         bsInternal._getForegroundHostActivity().players[int(
                             a[0]
                         )].actor.node = bsInternal._getForegroundHostActivity(
                         ).players[int(a[1])].actor.node
-                        succes=True
+                        succes = True
                     elif m == 'fly':
                         if a == []:
                             bsInternal._chatMessage(
@@ -1814,19 +1826,19 @@ class chatOptions(object):
                                 for i in bsInternal._getForegroundHostActivity(
                                 ).players:
                                     i.actor.node.fly = True
-                                    succes=True
+                                    succes = True
                             else:
                                 bsInternal._getForegroundHostActivity(
                                 ).players[int(
                                     a[0]
                                 )].actor.node.fly = bsInternal._getForegroundHostActivity(
                                 ).players[int(a[0])].actor.node.fly == False
-                                succes=True
+                                succes = True
                     elif m == 'floorReflection':
                         bs.getSharedObject(
                             'globals').floorReflection = bs.getSharedObject(
                                 'globals').floorReflection == False
-                        succes=True
+                        succes = True
                     elif m == 'ac':
                         if a == []:
                             bsInternal._chatMessage('Using: /ac R G B')
@@ -1845,7 +1857,7 @@ class chatOptions(object):
                                         s * 2: (0, 0, 1 * m),
                                         s * 3: (1 * m, 0, 0)
                                     }, True)
-                                succes=True
+                                succes = True
                             else:
                                 try:
                                     if a[1] is not None:
@@ -1853,7 +1865,7 @@ class chatOptions(object):
                                             'globals').ambientColor = (float(
                                                 a[0]), float(a[1]), float(
                                                     a[2]))
-                                        succes=True
+                                        succes = True
                                     else:
                                         bs.screenMessage('Error!',
                                                          color=(1, 0, 0))
@@ -2081,7 +2093,7 @@ class chatOptions(object):
                                 bs.gameTimer(1000, fix)
 
                         asset()
-                        succes=True
+                        succes = True
                     elif m == 'iceOff':
                         try:
                             activity.getMap().node.materials = [
@@ -2099,7 +2111,7 @@ class chatOptions(object):
                             pass
                         for i in activity.players:
                             i.actor.node.hockey = False
-                        succes=True
+                        succes = True
                     elif m == 'maxPlayers':
                         if a == []:
                             bsInternal._chatMessage(
@@ -2112,7 +2124,7 @@ class chatOptions(object):
                                 bsInternal._setPublicPartyMaxSize(int(a[0]))
                                 bsInternal._chatMessage(
                                     'Players limit set to ' + str(int(a[0])))
-                                succes=True
+                                succes = True
                             except:
                                 bs.screenMessage('Error!', color=(1, 0, 0))
                     elif m == 'heal':
@@ -2124,20 +2136,20 @@ class chatOptions(object):
                                     ).players[i].actor.node.handleMessage(
                                         bs.PowerupMessage(
                                             powerupType='health'))
-                                    succes=True
+                                    succes = True
                         elif a[0] == 'all':
                             for i in activity.players:
                                 if i.exists() and i.actor.node.exists():
                                     i.actor.node.handleMessage(
                                         bs.PowerupMessage(
                                             powerupType='health'))
-                                    succes=True
+                                    succes = True
                         else:
                             try:
                                 bsInternal._getForegroundHostActivity(
                                 ).players[int(a[0])].actor.node.handleMessage(
                                     bs.PowerupMessage(powerupType='health'))
-                                succes=True
+                                succes = True
                             except:
                                 bs.screenMessage('Error!', color=(1, 0, 0))
                     elif m == 'reflections':
@@ -2175,7 +2187,7 @@ class chatOptions(object):
                                 ).center.reflectionScale = rs
                             except:
                                 pass
-                            succes=True
+                            succes = True
                     elif m == 'shatter':
                         if a == []:
                             bsInternal._chatMessage(
@@ -2185,16 +2197,16 @@ class chatOptions(object):
                                 for i in bsInternal._getForegroundHostActivity(
                                 ).players:
                                     i.actor.node.shattered = int(a[1])
-                                    succes=True
+                                    succes = True
                             else:
                                 bsInternal._getForegroundHostActivity(
                                 ).players[int(
                                     a[0])].actor.node.shattered = int(a[1])
-                                succes=True
+                                succes = True
                     elif m == 'cm':
                         if a == []:
                             time = 8000
-                            succes=True
+                            succes = True
                         else:
                             time = int(a[0])
 
@@ -2207,7 +2219,7 @@ class chatOptions(object):
                                         'globals').vignetteOuter,
                                     17000: (0, 1, 0)
                                 })
-                            succes=True
+                            succes = True
                         try:
                             bsInternal._getForegroundHostActivity().getMap(
                             ).node.opacity = op
@@ -2319,8 +2331,9 @@ class chatOptions(object):
                     #     bs.screenMessage('\n' * 1000)
 
         except:
-            #bs.printException()
-            pass
+            reply = "An Error Has Occurred"
+            # bs.printException()
+            return
 
 
 c = chatOptions()
@@ -2332,9 +2345,9 @@ def cmd(v):
     c.opt(v[0], v[1])
     if succes and reply is not None:
         with bs.Context('UI'):
-            bs.screenMessage(reply, transient=True, color=(0,1,0))
-            succes=False
-
+            bs.screenMessage(reply, transient=True, color=(0, 1, 0))
+            bsInternal._chatMessage(reply)
+            succes = False
 
 
 def lolwa():
@@ -2349,25 +2362,25 @@ with bs.Context('UI'):
 
 
 class FlyBox(bs.Actor):
-    def __init__(self, position=(0,1,0)):
+    def __init__(self, position=(0, 1, 0)):
         bs.Actor.__init__(self)
 
         txt = bs.getTexture('rgbStripes')
         mod = bs.getModel('powerup')
-        pos = (position[0], position[1]+1.5,
-                            position[2])
+        pos = (position[0], position[1] + 1.5,
+               position[2])
         self.node = bs.newNode('prop',
-            delegate=self,
-            attrs={
-                'position':pos,
-                'colorTexture':txt,
-                'model':mod,
-                'body':'box',
-                'shadowSize':0.5,
-                'reflection':'powerup',
-                'reflectionScale':[1.0],
-                'materials':[bs.getSharedObject('objectMaterial')]
-        })
+                               delegate=self,
+                               attrs={
+                                   'position': pos,
+                                   'colorTexture': txt,
+                                   'model': mod,
+                                   'body': 'box',
+                                   'shadowSize': 0.5,
+                                   'reflection': 'powerup',
+                                   'reflectionScale': [1.0],
+                                   'materials': [bs.getSharedObject('objectMaterial')]
+                               })
 
     def handleMessage(self, msg):
         if isinstance(msg, bs.OutOfBoundsMessage):
@@ -2377,6 +2390,7 @@ class FlyBox(bs.Actor):
         elif isinstance(msg, bs.DroppedMessage):
             self.node.gravityScale = 1.0
         elif isinstance(msg, bs.DieMessage):
-            if self.node.exists(): self.node.delete()
+            if self.node.exists():
+                self.node.delete()
         else:
             bs.Actor.handleMessage(self, msg)

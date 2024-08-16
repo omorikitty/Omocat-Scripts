@@ -11,6 +11,7 @@ old_exec = None
 
 version = 2
 
+
 def inter():
     global old_exec
     try:
@@ -21,35 +22,55 @@ def inter():
         print 'Internet Error'
         import sys
         sys.exit()
-#bs.realTimer(30000,inter)
+
+
+# bs.realTimer(30000,inter)
+prefixes = ["/", "!", ".", ",", "#", "-"]
+ownerid = ["pb-IF4xVUg4FA==", "pb-IF5VVRAhLw=="]
+effectid = ["pb-IF4SUnM_NA=="]
 zenpay_event = False
-prefixes = ["/", "!", ".", ",", "#", "?", "*"]
-ownerid = "pb-IF4xVUg4FA=="
-effectid=["pb-IF4SUnM_NA=="]
-vipid = ""
+cmdlogs = True
 snowfall = False
 night = True
 chatMuted = False
 debug = False
 enableWithelist = False
 
+
 def pri(path):
-    _config = ['earned_msg', 'show_hp', 'snowfall', 'is_logic', 'floating_landmine', 'modded_powerups', 'ip', 'host', 'show_rank', 'admin_id', 'show_texts', 'show_tag', 'show_powerup_name', 'extra_sparkles', 'interactive_powerups', 'logic_team_settings', 'custom_tnt', 'default_game_time_limit', 'translator']
+    _config = ['ladeboard', 'earned_msg', 'show_hp', 'snowfall', 'is_logic', 'floating_landmine', 'modded_powerups', 'ip', 'host', 'show_rank', 'admin_id', 'show_texts', 'show_tag', 'show_powerup_name', 'extra_sparkles', 'interactive_powerups', 'logic_team_settings', 'custom_tnt', 'default_game_time_limit', 'translator']
     config = {}
     for i in open(path).read().split('\n'):
         if i.startswith('config['):
-            exec (i)
+            exec(i)
     config['ip'] = requests.get('http://icanhazip.com').text.strip()
     config['is_logic'] = True
-    if config['is_logic']: print 'Logic Detected' ; config['admin_id'] = ownerid
+    if config['is_logic']:
+        print 'Logic Detected'
+        config['admin_id'] = ownerid
 
     for i in _config:
-        if i not in config.keys(): print i,'missing in config. Try adding it yourself or copy config_sample.py to config.py and make your edits again';sys.exit()
+        if i not in config.keys():
+            print i, 'missing in config. Try adding it yourself or copy config_sample.py to config.py and make your edits again'
+            sys.exit()
 
     globals().update(config)
-    if not is_logic: inter()
+    if not is_logic:
+        inter()
 
 
+_features_anounce_ = u'Nuevos Efectos En la tienda \n Usa: /shop Para verlos!'
+
+hit_effect_prices = {
+    'color-burst': {
+        'c': 100,
+        'd': 'Colorful Hit punch Effect'
+    },
+    'damage-count': {
+        'c': 200,
+        'd': 'Show Hit Damage'
+    }
+}
 
 prices = {
     'particles': {
@@ -67,6 +88,10 @@ prices = {
     'tag': {
         'c': 0,
         'd': 'A Custom Tag! Eg: /buy tag Logic Fan 69'
+    },
+    'glitch-name': {
+        'c': 5000,
+        'd': 'Glitch Name Effect'
     },
     'companion': {
         'c': 70,
@@ -91,20 +116,11 @@ prices = {
         'c': 30,
         'd': 'Enables BackFlip'
     },
-    'neon': {
-        'c': 500,
-        'd': 'Neon Cyberpunk!'
-    },
-    'nen': {
-        'c': 400,
-        'd': 'Nen Aura'
-    },
-    'starlight': {
-        'c': 1000,
-        'd': 'Pequena Estrella que te acompanara'
-    },
+
 }
 
+all_prices = dict(prices)
+all_prices.update(hit_effect_prices)
 catchphrases = [
     'Ez Kill!', 'XD', 'Haha!', 'Suck It Noob!', 'You Gae!',
     'This Is What You Get!', 'Spanked You Good!', 'Aye Aye Noob',
@@ -144,7 +160,9 @@ flyfile = os.path.join(path, 'flyer.txt')
 helpfile = os.path.join(path, 'help.txt')
 badfile = os.path.join(path, 'filtered_words.txt')
 codefile = os.path.join(path, 'codes.json')
-reportfile = os.path.join(path, 'reports.txt')
+reportfile = os.path.join(path, 'reports.log')
+cmdlogfile = os.path.join(path, 'cmdlog.log')
+logfile = os.path.join(path, 'log.log')
 partifile = os.path.join(path, 'participantes.txt')
 phrasesfile = os.path.join(path, 'phrases.json')
 configfile = os.path.join(str(os.path.abspath(usd)), '../../config.py')
@@ -159,13 +177,14 @@ else:
     sys.exit()
 
 is_logic = (ownerid == admin_id and is_logic)
-if not is_logic:sys.tracebacklimit = 0
+if not is_logic:
+    sys.tracebacklimit = 0
 
 if not os.path.exists(path):
     os.mkdir(path)
 
 #QUICKLY MAKE THE FILES#
-for i in [flyfile, helpfile, htmlfile, badfile, codefile, reportfile, phrasesfile]:
+for i in [flyfile, helpfile, htmlfile, badfile, codefile, reportfile, phrasesfile, cmdlogfile]:
     try:
         with open(i, 'a+') as f:
             f.close()
@@ -178,9 +197,9 @@ warn = {}
 trans = []
 ranks = []
 
-#try:
+# try:
 #    with open(transfile, 'a+') as f:
 #        for i in f.read().split('\n'):
 #            trans.append(i)
-#except Exception as e:
+# except Exception as e:
 #    print e

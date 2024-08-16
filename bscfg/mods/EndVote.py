@@ -10,27 +10,26 @@ min_game_duration_to_start_end_vote = 30
 
 voters = []
 
+
 def vote_end(pb_id, client_id):
     global voters
     global last_end_vote_start_time
+    votes = 0
+    max_vote = 0
     now = time.time()
     if now > last_end_vote_start_time + end_vote_duration:
         voters = []
         last_end_vote_start_time = now
     if now < game_started_on + min_game_duration_to_start_end_vote:
         bs.screenMessage("Seems game just started\nTry again after some time", color=(0.7, 0.7, 1), transient=True,
-                          clients=[client_id])
+                         clients=[client_id])
         return
     if len(voters) == 0:
         bs.screenMessage("end vote started", color=(0.7, 0.7, 1))
 
     # clean up voters list
-    active_players = []
-    #print active_players
-    for i in bsInternal._getGameRoster():
-        if len(i['players']) > 0:
-            n = handle.getAccountIDFromClientID(i['clientID'])
-            active_players.append(n)
+    active_players = [handle.getAccountIDFromClientID(i['clientID']) for i in bsInternal._getGameRoster() if len(i['players']) > 0]
+    voters = [voter for voter in voters if voter in active_players]
 
     for voter in voters:
         if voter not in active_players:
@@ -38,10 +37,9 @@ def vote_end(pb_id, client_id):
     if pb_id not in voters:
         voters.append(pb_id)
         bs.screenMessage("Thanks for vote\nencourage other players to type 'end' too.", color=(0.7, 0.7, 1), transient=True,
-                          clients=[client_id])
-        update_vote_text(required_votes(len(active_players)) - len(voters))
-        if required_votes(len(active_players)) - len(
-                voters) == 3:  # lets dont spam chat/screen message with votes required , only give message when only 3 votes left
+                         clients=[client_id])
+        update_vote_text(len(voters), required_votes(len(active_players)))
+        if len(active_players) - len(voters) == 3:
             bs.screenMessage("3 more end votes required", color=(0.7, 0.7, 1))
 
     if len(voters) >= required_votes(len(active_players)):
@@ -53,32 +51,22 @@ def vote_end(pb_id, client_id):
             pass
 
 
-def required_votes(players):
-    if players == 2:
-        return 1
-    elif players == 3:
-        return 2
-    elif players == 4:
-        return 2
-    elif players == 5:
-        return 3
-    elif players == 6:
-        return 3
-    elif players == 7:
-        return 4
-    elif players == 8:
-        return 4
-    elif players == 10:
-        return 5
+def required_votes(voters_count, method="mayoria", percentage=0.75, min_votes=3):
+    if method == "mayoria":
+        return max(1, int(voters_count / 2) + 1)
+    elif method == "forpercentage":
+        return max(1, int(voters_count * percentage))
+    elif method == "minvotes":
+        return max(min_votes, int(voters_count / 2) + 1)
     else:
-        return players - 4
+        raise ValueError("invalid method xd")
 
 
-
-def update_vote_text(votes_needed):
+def update_vote_text(votes_needed, max_vote):
     activity = bsInternal._getForegroundHostActivity()
+
     try:
-        activity.end_vote_text.node.text = "{}\nvotos".format(votes_needed)
+        activity.end_vote_text.node.text = "Skip Votes: {}/{}".format(votes_needed, max_vote)
     except:
         with bs.Context(bsInternal._getForegroundHostActivity()):
             node = bs.NodeActor(bs.newNode('text',
@@ -86,13 +74,14 @@ def update_vote_text(votes_needed):
                                                'vAttach': 'top',
                                                'hAttach': 'center',
                                                'hAlign': 'center',
-                                               'color': (0.5,0.5,0.5),
+                                               'vAlign': 'center',
+                                               'color': (1, 1, 1),
                                                'flatness': 0.5,
                                                'shadow': 0.5,
-                                               'position': (-10, -50),
-                                               'scale': 0.7,
-                                               'text': '{}\nvotos'.format(
-                                                   votes_needed)
+                                               'position': (0, -80),
+                                               'scale': 0.5,
+                                               'text': 'Skip Votes: {}/{}'.format(
+                                                   votes_needed, max_vote)
                                            })).autoRetain()
             activity.end_vote_text = node
             bs.Timer(20, remove_vote_text)

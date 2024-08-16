@@ -14,6 +14,7 @@ class TracePrints(object):
         self.stdout.write('\n')
         if s != '\n':
             traceback.print_stack(file=self.stdout)
+
     def flush(self):
         pass
 

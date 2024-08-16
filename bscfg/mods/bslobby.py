@@ -29,6 +29,36 @@ change_limit = 10
 
 ChangeMessage = bsLobby.ChangeMessage
 
+def send_screen(message, color, client):
+    if client:
+        bs.pushCall(bs.Call(bs.screenMessage,
+            message,
+            clients=[client],
+            color=color,
+            transient=True
+        ))
+    else:
+        bs.pushCall(bs.Call(bs.screenMessage,
+            message,
+            color=color,
+        ))
+
+def welcome_server_message(player, features=True):
+    account_id = player.get_account_id()
+    messages = ""
+    color = (1, 1, 0)
+    if db.getAdmin(account_id):
+        messages = u'\ue00c[ADMIN] Hola, {} Que Gusto Verte de Nuevo\ue00c'.format(player.getName(full=True))
+        color = (0.2, 0.5, 0.8)
+
+    else:
+        messages = u'\ue00cHola, Gracias por Pasarte\ue00c'
+
+    if features:
+        messages = some._features_anounce_
+        color = (0.2, 0.4, 0.8)
+
+    send_screen(message=messages, color=color, client=player.getInputDevice().getClientID())
 
 def _setReady(self, ready):
 
@@ -69,22 +99,6 @@ def _setReady(self, ready):
         self._updateText()
         self._player.setName('untitled', real=False)
     elif ready == True:
-        pid = self._player.get_account_id()
-        admin = db.getAdmin(pid)
-        if admin:
-            bs.screenMessage(
-                u"Welcome my Lord!", 
-                color=(0, 1, 1),
-                clients=[self._player.getInputDevice().getClientID()], 
-                transient=True
-            )
-        else:
-            bs.screenMessage(
-                u'\ue00cHola, Gracias por pasarte!\ue00c', 
-                color=(1,1,1), 
-                clients=[self._player.getInputDevice().getClientID()], 
-                transient=True
-            )
         self._player.assignInputCall(
             ('leftPress', 'rightPress', 'upPress', 'downPress', 'jumpPress',
              'bombPress', 'pickUpPress'), self._doNothing)
@@ -134,6 +148,8 @@ def _setReady(self, ready):
     else:
         if self.screen == 'join':
             bs.getSession().handleMessage(PlayerReadyMessage(self))
+            welcome_server_message(self._player)
+
         elif self.screen == 'stats':
             if bs.getGameTime() - self.statsTime >= 7000:
                 n = self._player.get_account_id()
@@ -631,8 +647,16 @@ def _getName(self, full=True, clamp=False):
         # to convert to raw int vals for safe trimming
         nameChars = bs.uniToInts(name)
         if len(nameChars) > 10:
-            name = bs.uniFromInts(nameChars[:10]) + '...'
-    # return 'INVALID NAME' if name.encode('ascii','ignore') == '' else name
+            name = bs.uniFromInts(nameChars[:10]) + u'...'
+
+    if not isinstance(name, unicode):
+        name = unicode(name, 'utf-8', errors='ignore')
+
+    try:
+        name.encode('utf-8')
+    except UnicodeEncodeError:
+        name = ''.join([c if ord(c) < 128 else '' for c in name])
+    #return 'INVALID NAME' if name.encode('ascii','ignore') == '' else name
     return name
 
 

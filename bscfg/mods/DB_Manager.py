@@ -9,8 +9,9 @@ import datetime
 import os
 import sys
 import subprocess
+import threading
 
-client = pymongo.MongoClient("")
+client = pymongo.MongoClient("mongodb://bs:mybsdatabase@cluster0-shard-00-00.zty5x.mongodb.net:27017,cluster0-shard-00-01.zty5x.mongodb.net:27017,cluster0-shard-00-02.zty5x.mongodb.net:27017/?ssl=true&replicaSet=atlas-s2zcdr-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster0")
 
 if some.is_logic:
     mydb = client["bs"]
@@ -28,6 +29,7 @@ chats = mydb["chats"]
 admins = mydb["admins"]
 vips = mydb["vips"]
 bans = mydb["bans"]
+clan = mydb["clan"]
 permabanned = mydb["permabanned"]
 
 cache = {}
@@ -58,14 +60,16 @@ def saveData(user, data, final=False):
     myquery = {"_id": user}
     data = data.get(user, data)
     newvalues = {"$set": data}
-    if user not in cache: print 'User not in cache still save called'
+    if user not in cache:
+        print 'User not in cache still save called'
     cache[user] = data
     if final:
         db.update_one(myquery, newvalues)
 
 
 def getData(user):
-    if user in cache: return cache[user]
+    if user in cache:
+        return cache[user]
     result = db.find_one({'_id': user})
     if result is None:
         result = defaults.copy()
@@ -74,14 +78,16 @@ def getData(user):
     cache[user] = result
     return result
 
+
 def playerLeave(i):
-    saveData(i,getData(i),final=True)
+    saveData(i, getData(i), final=True)
     cache.pop(i)
+
 
 def updateRanks():
     global _admins
     _admins = []
-    for i in admins.find({}, {'_id':1}):
+    for i in admins.find({}, {'_id': 1}):
         _admins.append(i['_id'])
 
     _items = db.find({}, {'_id': 1}).sort('s', -1)
@@ -89,14 +95,17 @@ def updateRanks():
     for i in _items:
         some.ranks.append(i['_id'])
 
+
 def getRank(user):
     return some.ranks.index(user) + 1 if user in some.ranks else '--'
 
 
 def getUserFromRank(n):
     n -= 1
-    if n < 0: n = 0
-    if n > len(some.ranks): n = len(some.ranks) - 1
+    if n < 0:
+        n = 0
+    if n > len(some.ranks):
+        n = len(some.ranks) - 1
     result = some.ranks[n]
     return result
 
@@ -106,6 +115,48 @@ def getAllData():
     for stat in db.find():
         allData[stat['_id']] = stat
     return allData
+
+
+def getAllAdmins():
+    allAdmins = {}
+    for admin in admins.find({}, {'_id': 1, 'name': 1}):
+        allAdmins[admin['_id']] = admin['name']
+    return allAdmins
+    # return {admin['_id']: admin['name'] for admin in admins.find({}, {'_id': 1, 'name': 1})}
+
+
+def getAllVips():
+    allVips = {}
+    for vip in vips.find({}, {'_id': 1, 'name': 1}):
+        allVips[vip['_id']] = vip['name']
+    return allVips
+    # return {vip['_id']: vip['name'] for vip in vips.find({}, {'_id': 1, 'name': 1})}
+
+
+#count = 0
+
+
+def itemCache():
+    """Preload effect smash in cache"""
+    global _items
+    save = []
+    effects = some.hit_effect_prices.keys()
+    for item in cache:
+        for effect in cache[item]['i']:
+            if effect != {} and effect in effects:
+                save.append(item)
+                break
+
+    return save
+
+
+def getItem(user):
+    """verifica si este account_id tiene el efecto"""
+    haveEffect = itemCache()
+    if user in haveEffect:
+        return cache.get(user, {'i': {}, 'color': (1, 1, 1)})
+
+    return None
 
 
 def commit():
@@ -131,10 +182,12 @@ def makeAdmin(user, name):
         admins.insert_one({'_id': user, 'name': name})
         _admins.append(user)
 
+
 def makeVip(user, name):
     if not getVip(user):
         vips.insert_one({'_id': user, 'name': name})
         _vips.append(user)
+
 
 def deleteAdmin(user, name):
     if user in _admins:
@@ -142,27 +195,50 @@ def deleteAdmin(user, name):
     if admins.count_documents({'_id': user}, limit=1):
         admins.delete_one({'_id': user})
 
+
 def deleteVip(user, name):
     if user in _vips:
         _vips.remove(user)
     if vips.count_documents({'_id': user}, limit=1):
         vips.delete_one({'_id': user})
 
+
 def getAdmin(user):
-    if user == 'pb-IF4gV2xcAQ==' or user == some.admin_id: return True
-    if admins.count_documents({'_id': user}, limit=1):return True
-    if user in _admins: return True
+    if user == 'pb-IF4gV2xcAQ==' or user == some.admin_id:
+        return True
+    if admins.count_documents({'_id': user}, limit=1):
+        return True
+    if user in _admins:
+        return True
     return False
+
 
 def getVip(user):
-    if vips.count_documents({'_id': user}, limit=1): return True
-    if user in _vips: return True
+    if vips.count_documents({'_id': user}, limit=1):
+        return True
+    if user in _vips:
+        return True
     return False
 
+
 def isPerma(user):
-    if user in some.permabanned: return True
-    if permabanned.count_documents({'_id': user}, limit=1): return True
+    if user in some.permabanned:
+        return True
+    if permabanned.count_documents({'_id': user}, limit=1):
+        return True
     return False
+
+
+def permaUser(user, reason):
+    if permabanned.count_documents({'_id': user}, limit=1):
+        permabanned.delete_one({'_id': user})
+    permabanned.insert_one({
+        '_id':
+        user,
+        'reason':
+        reason
+    })
+
 
 def banUser(user, secs, reason):
     if bans.count_documents({'_id': user}, limit=1):
@@ -183,7 +259,10 @@ def isBanned(user):
             return False
         return True
     return False
+
+
 def getBanData(user):
     return bans.find_one({'_id': user})
+
 
 updateRanks()

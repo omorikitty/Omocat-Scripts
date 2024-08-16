@@ -7,8 +7,8 @@ correctAnswer = None
 answeredBy = None
 
 settings = {
-    'enableCoinSystem': True,
-    'questionDelay': 100,
+    'enableCoinSystem': False,
+    'questionDelay': 500,
 }
 questionsList = {
     'add':None,

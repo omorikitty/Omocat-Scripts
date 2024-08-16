@@ -26,14 +26,14 @@ def restart():
 
 
 
-bs.realTimer(60 * 60 * 1000, restart)
+bs.realTimer(2 * 60 * 60 * 1000, restart)
 
 
 def warn():
     bs.screenMessage('Server is going to reboot in 1 minute', transient=True)
 
 
-bs.realTimer((60 * 60 * 1000) - 60000, warn)
+bs.realTimer((2 * 60 * 60 * 1000) - 60000, warn)
 
 
 # def _init_map(func):
@@ -72,9 +72,8 @@ bs.realTimer((60 * 60 * 1000) - 60000, warn)
 #             args[0]._restart_server_input.connectAttr(
 #                 'output', args[0]._restart_server, 'text')
 #         _restart_server()
-     
+
 #     return deco
 
 # import bsMap
 # bsMap.Map.__init__ = _init_map(bsMap.Map.__init__)
-
